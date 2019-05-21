@@ -42,6 +42,7 @@ public class Utils {
 		try {
 			PrintWriter pw = new PrintWriter(new FileOutputStream(resultFile));
 			resultFile.createNewFile();
+			pw.println("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester");
 			for (String str : lines)
 				pw.println(str);
 			pw.close();
