@@ -23,13 +23,6 @@ dependencies {
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation 'com.google.guava:guava:27.0.1-jre'
-    
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
-
-	// https://mvnrepository.com/artifact/org.apache.commons/commons-csv
-	compile group: 'org.apache.commons', name: 'commons-csv', version: '1.6'
-
-	
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
