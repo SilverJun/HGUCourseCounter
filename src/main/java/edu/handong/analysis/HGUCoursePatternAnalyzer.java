@@ -1,14 +1,15 @@
 package edu.handong.analysis;
 
 import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
-import edu.handong.analysise.utils.NotEnoughArgumentException;
-import edu.handong.analysise.utils.Utils;
+import edu.handong.analysis.utils.NotEnoughArgumentException;
+import edu.handong.analysis.utils.Utils;
 
 public class HGUCoursePatternAnalyzer {
 
@@ -54,9 +55,25 @@ public class HGUCoursePatternAnalyzer {
 	 */
 	private HashMap<String,Student> loadStudentCourseRecords(ArrayList<String> lines) {
 		
-		// TODO: Implement this method
+		HashMap<String,Student> newStudents = new HashMap<String,Student>();
 		
-		return null; // do not forget to return a proper variable.
+		for (String item : lines)
+		{
+			String studentId = item.split(",")[0].trim();	// get student id.
+			Student tempStudent;
+			
+			if (newStudents.containsKey(studentId))			// if contain studentid, get this id's student.
+				tempStudent = newStudents.get(studentId);
+			else
+			{
+				tempStudent = new Student(studentId);		// if not exist, create student and put in hashmap.
+				newStudents.put(studentId, tempStudent);
+			}
+			
+			tempStudent.addCourse(new Course(item));
+		}
+		
+		return newStudents; // do not forget to return a proper variable.
 	}
 
 	/**
@@ -73,9 +90,27 @@ public class HGUCoursePatternAnalyzer {
 	 * @return
 	 */
 	private ArrayList<String> countNumberOfCoursesTakenInEachSemester(Map<String, Student> sortedStudents) {
+		ArrayList<String> resultStrings = new ArrayList<String>();
 		
-		// TODO: Implement this method
+		for (Student student : sortedStudents.values())
+		{
+			String totalSemester = Integer.toString(student.getSemestersByYearAndSemester().values().size());
+			
+			for (Integer nSemester : student.getSemestersByYearAndSemester().values())
+			{
+				String tempString = new String();
+				tempString += student.getStudentId();
+				tempString += ",";
+				tempString += totalSemester;
+				tempString += ",";
+				tempString += nSemester.toString();
+				tempString += ",";
+				tempString += student.getNumCourseInNthSementer(nSemester);
+				
+				resultStrings.add(tempString);
+			}
+		}
 		
-		return null; // do not forget to return a proper variable.
+		return resultStrings; // do not forget to return a proper variable.
 	}
 }
