@@ -85,7 +85,16 @@ public class Course {
 	
 	public Course(String line)
 	{
-		
+		String[] elements = line.split(", ");
+		studentId = elements[0];
+		yearMonthGraduated = elements[1];
+		firstMajor = elements[2];
+		secondMajor = elements[3];
+		courseCode = elements[4];
+		courseName = elements[5];
+		courseCredit = elements[6];
+		yearTaken = Integer.parseInt(elements[7]);
+		semesterCourseTaken = Integer.parseInt(elements[8]);
 	}
 
 }
