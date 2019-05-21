@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.io.File;
 
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
@@ -26,7 +27,16 @@ public class HGUCoursePatternAnalyzer {
 			// when there are not enough arguments from CLI, it throws the NotEnoughArgmentException which must be defined by you.
 			if(args.length<2)
 				throw new NotEnoughArgumentException();
+			
+			// check file exist. 
+			File f1 = new File(args[0]);
+			if(!f1.exists() || f1.isDirectory())
+				throw new Exception("The file path does not exist. Please check your CLI argument!");
 		} catch (NotEnoughArgumentException e) {
+			System.out.println(e.getMessage());
+			System.exit(0);
+		} catch (Exception e)
+		{
 			System.out.println(e.getMessage());
 			System.exit(0);
 		}
@@ -63,7 +73,9 @@ public class HGUCoursePatternAnalyzer {
 			Student tempStudent;
 			
 			if (newStudents.containsKey(studentId))			// if contain studentid, get this id's student.
+			{
 				tempStudent = newStudents.get(studentId);
+			}
 			else
 			{
 				tempStudent = new Student(studentId);		// if not exist, create student and put in hashmap.
@@ -94,9 +106,11 @@ public class HGUCoursePatternAnalyzer {
 		
 		for (Student student : sortedStudents.values())
 		{
-			String totalSemester = Integer.toString(student.getSemestersByYearAndSemester().values().size());
+			Map<String, Integer> sortedSemesters = new TreeMap<String,Integer>(student.getSemestersByYearAndSemester()); 
 			
-			for (Integer nSemester : student.getSemestersByYearAndSemester().values())
+			String totalSemester = Integer.toString(sortedSemesters.values().size());
+			
+			for (Integer nSemester : sortedSemesters.values())
 			{
 				String tempString = new String();
 				tempString += student.getStudentId();
