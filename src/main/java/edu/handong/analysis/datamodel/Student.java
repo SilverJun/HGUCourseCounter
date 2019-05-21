@@ -38,7 +38,6 @@ public class Student {
 			}
 			else
 			{
-				System.out.println(tempString);
 				semestersByYearAndSemester.put(tempString, i++);
 			}
 		}
