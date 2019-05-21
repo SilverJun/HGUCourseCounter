@@ -1,7 +1,10 @@
 package edu.handong.analysis.utils;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class Utils {
@@ -33,6 +36,18 @@ public class Utils {
 	
 	public static void writeAFile(ArrayList<String> lines, String targetFileName)
 	{
+		File resultFile = new File(targetFileName);
 		
+		try {
+			PrintWriter pw = new PrintWriter(new FileOutputStream(resultFile));
+			resultFile.createNewFile();
+			for (String str : lines)
+				pw.println(str);
+			pw.close();
+		}
+		catch(Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
 	}
 }
