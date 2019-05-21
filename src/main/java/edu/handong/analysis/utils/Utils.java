@@ -15,7 +15,7 @@ public class Utils {
 		
 		try {
 			// file read
-			BufferedReader in = new BufferedReader(new FileReader("path/to/file.csv"));
+			BufferedReader in = new BufferedReader(new FileReader(file));
 			
 			String s;
 			if (removeHeader) in.readLine();		// if removeHeader, readLine() to skip first line.
@@ -37,6 +37,7 @@ public class Utils {
 	public static void writeAFile(ArrayList<String> lines, String targetFileName)
 	{
 		File resultFile = new File(targetFileName);
+		if (!resultFile.exists()) resultFile.mkdirs();
 		
 		try {
 			PrintWriter pw = new PrintWriter(new FileOutputStream(resultFile));
