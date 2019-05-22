@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class Utils {
@@ -36,8 +39,21 @@ public class Utils {
 	
 	public static void writeAFile(ArrayList<String> lines, String targetFileName)
 	{
+		Path path = Paths.get(targetFileName);
+		File parentDir = path.toFile().getParentFile();
+		if (!parentDir.exists())
+		{
+			try 
+			{
+				parentDir.mkdirs();
+			}
+			catch(Exception e)
+			{
+				System.out.println(e.getMessage());
+			}
+		}
+		
 		File resultFile = new File(targetFileName);
-		if (!resultFile.exists()) resultFile.mkdirs();
 		
 		try {
 			PrintWriter pw = new PrintWriter(new FileOutputStream(resultFile));
