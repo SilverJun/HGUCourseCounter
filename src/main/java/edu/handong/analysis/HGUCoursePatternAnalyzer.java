@@ -5,6 +5,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+
 import java.io.File;
 
 import edu.handong.analysis.datamodel.Course;
@@ -23,26 +31,39 @@ public class HGUCoursePatternAnalyzer {
 	 */
 	public void run(String[] args) {
 		
+		CommandLineParser parser = new DefaultParser();
+
+		String dataPath = null; // csv file to be analyzed
+		String resultPath = null; // the file path where the results are saved.
+		String startYear = null;
+		String endYear = null;
+		
+		int analysisType = 0;	//1: Count courses per semester, 2: Count per course name and year
+		
+		Options options = createOptions();
 		try {
-			// when there are not enough arguments from CLI, it throws the NotEnoughArgmentException which must be defined by you.
-			if(args.length<2)
-				throw new NotEnoughArgumentException();
-			
+			CommandLine cmd = parser.parse(options, args);
+
+			dataPath = cmd.getOptionValue("i");
+			resultPath = cmd.getOptionValue("o");
+			analysisType = Integer.parseInt(cmd.getOptionValue("a"));
+			startYear = cmd.getOptionValue("s");
+			endYear = cmd.getOptionValue("e");
+			if (analysisType == 2 && cmd.getOptionValue("c") == null) throw new NotEnoughArgumentException();
+
 			// check file exist. 
 			File f1 = new File(args[0]);
 			if(!f1.exists() || f1.isDirectory())
 				throw new Exception("The file path does not exist. Please check your CLI argument!");
 		} catch (NotEnoughArgumentException e) {
-			System.out.println(e.getMessage());
+			printHelp(options);
 			System.exit(0);
-		} catch (Exception e)
-		{
+		}
+		catch (Exception e) {
 			System.out.println(e.getMessage());
 			System.exit(0);
 		}
 		
-		String dataPath = args[0]; // csv file to be analyzed
-		String resultPath = args[1]; // the file path where the results are saved.
 		ArrayList<String> lines = Utils.getLines(dataPath, true);
 		
 		students = loadStudentCourseRecords(lines);
@@ -126,5 +147,66 @@ public class HGUCoursePatternAnalyzer {
 		}
 		
 		return resultStrings; // do not forget to return a proper variable.
+	}
+	
+	private Options createOptions() {
+		Options options = new Options();
+
+		options.addOption(Option.builder("i").longOpt("input")
+				.desc("Set an input file path")
+				.hasArg()
+				.argName("Input path")
+				.required()
+				.build());
+		
+		options.addOption(Option.builder("o").longOpt("output")
+				.desc("Set an input file path")
+				.hasArg()
+				.argName("Output path")
+				.required()
+				.build());
+		
+		options.addOption(Option.builder("a").longOpt("analysis")
+				.desc("1: Count courses per semester, 2: Count per course name and year")
+				.hasArg()
+				.argName("Analysis option")
+				.required()
+				.build());
+		
+		options.addOption(Option.builder("c").longOpt("coursecode")
+				.desc("Course code for '-a 2' option")
+				.hasArg()
+				.argName("course code")
+				.build());
+		
+		options.addOption(Option.builder("s").longOpt("startyear")
+				.desc("CSet the start year for analysis e.g., -s 2002")
+				.hasArg()
+				.argName("Start year for analysis")
+				.required()
+				.build());
+		
+		options.addOption(Option.builder("e").longOpt("endyear")
+				.desc("Set the end year for analysis e.g., -e 2005")
+				.hasArg()
+				.argName("End year for analysis")
+				.required()
+				.build());
+
+		// add options by using OptionBuilder
+		options.addOption(Option.builder("h").longOpt("help")
+		        .desc("Help")
+		        .build());
+		
+		return options;
+	}
+	
+
+	private void printHelp(Options options) {
+		// automatically generate the help statement
+		HelpFormatter formatter = new HelpFormatter();
+		String header = "HGU Course Analyzer";
+		String footer = "";
+		formatter.printHelp("HGUCourseCounter", header, options, footer, true);
 	}
 }
