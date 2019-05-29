@@ -12,8 +12,14 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 import java.io.File;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
@@ -37,6 +43,7 @@ public class HGUCoursePatternAnalyzer {
 		String resultPath = null; // the file path where the results are saved.
 		String startYear = null;
 		String endYear = null;
+		String courseCode = null;
 		
 		int analysisType = 0;	//1: Count courses per semester, 2: Count per course name and year
 		
@@ -49,10 +56,10 @@ public class HGUCoursePatternAnalyzer {
 			analysisType = Integer.parseInt(cmd.getOptionValue("a"));
 			startYear = cmd.getOptionValue("s");
 			endYear = cmd.getOptionValue("e");
-			if (analysisType == 2 && cmd.getOptionValue("c") == null) throw new NotEnoughArgumentException();
-
+			if (analysisType == 2 && (courseCode = cmd.getOptionValue("c")) == null) throw new NotEnoughArgumentException();
+			if (analysisType != 1 && analysisType != 2) throw new NotEnoughArgumentException();
 			// check file exist. 
-			File f1 = new File(args[0]);
+			File f1 = new File(dataPath);
 			if(!f1.exists() || f1.isDirectory())
 				throw new Exception("The file path does not exist. Please check your CLI argument!");
 		} catch (NotEnoughArgumentException e) {
@@ -64,33 +71,51 @@ public class HGUCoursePatternAnalyzer {
 			System.exit(0);
 		}
 		
-		ArrayList<String> lines = Utils.getLines(dataPath, true);
-		
-		students = loadStudentCourseRecords(lines);
+		CSVParser csvParser = null;
+		try {
+		Reader reader = Files.newBufferedReader(Paths.get(dataPath));
+        csvParser = new CSVParser(reader, CSVFormat.DEFAULT
+                .withFirstRecordAsHeader()
+                .withTrim());
+		}
+		catch(Exception e)
+		{
+			System.out.println(e.getMessage());
+			System.exit(0);
+		}
+		students = loadStudentCourseRecords(csvParser);
 		
 		// To sort HashMap entries by key values so that we can save the results by student ids in ascending order.
 		Map<String, Student> sortedStudents = new TreeMap<String,Student>(students); 
 		
-		// Generate result lines to be saved.
-		ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
-		
-		// Write a file (named like the value of resultPath) with linesTobeSaved.
-		Utils.writeAFile(linesToBeSaved, resultPath);
+		if (analysisType == 1)
+		{
+			// Generate result lines to be saved.
+			ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents, startYear, endYear);
+			
+			// Write a file (named like the value of resultPath) with linesTobeSaved.
+			Utils.writeA1File(linesToBeSaved, resultPath);
+		}
+		else
+		{
+			// Generate result lines to be saved.
+			ArrayList<String> linesToBeSaved = courseTakenAnalyze(sortedStudents, courseCode, startYear, endYear);
+						
+			Utils.writeA2File(linesToBeSaved, resultPath);
+		}
 	}
 	
 	/**
 	 * This method create HashMap<String,Student> from the data csv file. Key is a student id and the corresponding object is an instance of Student.
 	 * The Student instance have all the Course instances taken by the student.
-	 * @param lines
-	 * @return
 	 */
-	private HashMap<String,Student> loadStudentCourseRecords(ArrayList<String> lines) {
+	private HashMap<String,Student> loadStudentCourseRecords(CSVParser csvParser) {
 		
 		HashMap<String,Student> newStudents = new HashMap<String,Student>();
 		
-		for (String item : lines)
+		for (CSVRecord item : csvParser)
 		{
-			String studentId = item.split(",")[0].trim();	// get student id.
+			String studentId = item.get("StudentID");	// get student id.
 			Student tempStudent;
 			
 			if (newStudents.containsKey(studentId))			// if contain studentid, get this id's student.
@@ -122,8 +147,11 @@ public class HGUCoursePatternAnalyzer {
 	 * @param sortedStudents
 	 * @return
 	 */
-	private ArrayList<String> countNumberOfCoursesTakenInEachSemester(Map<String, Student> sortedStudents) {
+	private ArrayList<String> countNumberOfCoursesTakenInEachSemester(Map<String, Student> sortedStudents, String startYear, String endYear) {
 		ArrayList<String> resultStrings = new ArrayList<String>();
+		
+		int startyear = Integer.parseInt(startYear);
+		int endyear = Integer.parseInt(endYear);
 		
 		for (Student student : sortedStudents.values())
 		{
@@ -133,6 +161,21 @@ public class HGUCoursePatternAnalyzer {
 			
 			for (Integer nSemester : sortedSemesters.values())
 			{
+				String year = null;
+				for (String key : sortedSemesters.keySet()) {		// 해당년도를 받아오기 위한 탐색.
+					if (sortedSemesters.get(key) == nSemester)
+					{
+						year = key;
+						break;
+					}
+				}
+				
+				int intyear = Integer.parseInt(year.split("-")[0]);		// 해당 년도 받아옴.
+				System.out.println(intyear);
+				if (intyear < startyear || intyear > endyear) {			// 주어진 범위가 아니면 스킵.
+					continue;
+				}
+				
 				String tempString = new String();
 				tempString += student.getStudentId();
 				tempString += ",";
@@ -147,6 +190,65 @@ public class HGUCoursePatternAnalyzer {
 		}
 		
 		return resultStrings; // do not forget to return a proper variable.
+	}
+	
+	private ArrayList<String> courseTakenAnalyze(Map<String, Student> students, String courseCode, String startYear, String endYear)
+	{
+		ArrayList<String> resultStrings = new ArrayList<String>();
+		HashMap<Integer, Course> courses = new HashMap<Integer, Course>();
+		HashMap<Integer, Integer> yearTotalPerson = new HashMap<Integer, Integer>();
+		HashMap<Integer, Integer> yearTakenPerson = new HashMap<Integer, Integer>();
+		
+		int startyear = Integer.parseInt(startYear);
+		int endyear = Integer.parseInt(endYear);
+		
+		for (Student item : students.values())
+		{
+			for (Course course : item.getCoursesTaken())
+			{
+				int courseYear = course.getYearTaken();
+				if (courseYear < startyear || courseYear > endyear) continue;
+				
+				if (yearTotalPerson.containsKey(courseYear))
+				{
+					yearTotalPerson.put(courseYear, yearTotalPerson.get(courseYear)+1);
+				}
+				else
+				{
+					yearTotalPerson.put(courseYear, 1);
+				}
+				
+				if (course.getCourseCode().equals(courseCode))
+				{
+					courses.put(courseYear, course);
+					if (yearTakenPerson.containsKey(courseYear))
+						yearTakenPerson.put(courseYear, yearTakenPerson.get(courseYear)+1);
+					else
+						yearTakenPerson.put(courseYear, 1);
+					break;
+				}
+			}
+		}
+		
+		//Map<Integer, Course> sortCourses = new TreeMap<Integer,Course>(courses); 
+		//Map<Integer, Integer> sortYearTotalPerson = new TreeMap<Integer,Integer>(yearTotalPerson); 
+		Map<Integer, Integer> sortYearTakenPerson = new TreeMap<Integer,Integer>(yearTakenPerson); 
+		
+		
+		for (Integer i : sortYearTakenPerson.keySet())
+		{
+			//Year,Semester,CouseCode, CourseName,TotalStudents,StudentsTaken,Rate
+			resultStrings.add(i.toString() + ", "
+					+ courses.get(i).getSemesterCourseTaken() + ", "
+					+ courseCode + ", "
+					+ courses.get(i).getCourseName() + ", "
+					+ yearTotalPerson.get(i) + ", "
+					+ yearTakenPerson.get(i) + ", "
+					+ String.format("%.1f", (yearTakenPerson.get(i).floatValue() / yearTotalPerson.get(i).floatValue())*100.0f ));
+		}
+		
+		
+		return resultStrings;
 	}
 	
 	private Options createOptions() {
