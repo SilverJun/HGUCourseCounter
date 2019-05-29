@@ -81,4 +81,12 @@ public class Student {
 	public void setStudentId(String studentId) {
 		this.studentId = studentId;
 	}
+
+	public ArrayList<Course> getCoursesTaken() {
+		return coursesTaken;
+	}
+
+	public void setCoursesTaken(ArrayList<Course> coursesTaken) {
+		this.coursesTaken = coursesTaken;
+	}
 }
