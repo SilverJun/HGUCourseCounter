@@ -13,7 +13,7 @@ plugins {
 
 
 apply plugin: 'distribution'
-mainClassName = "edu.handong.analysis.HGUCoursePatternAnalyzer"    
+mainClassName = "edu.handong.analysis.Main"    
 
 repositories {
     // Use jcenter for resolving your dependencies.
